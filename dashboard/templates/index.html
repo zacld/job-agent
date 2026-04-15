@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Agent — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --surface2: #22263a;
+    --border:   #2a2f45;
+    --text:     #e8eaf6;
+    --muted:    #7b82a8;
+    --accent:   #4f7cff;
+    --accent2:  #7c4fff;
+    --green:    #22c55e;
+    --yellow:   #f59e0b;
+    --orange:   #f97316;
+    --red:      #ef4444;
+    --blue:     #3b82f6;
+    --purple:   #a855f7;
+    --radius:   12px;
+    --radius-sm:6px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────────── */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ──────────────────────────────────────────────────── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .nav-section h4 {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .nav-item .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-filters { display: flex; flex-direction: column; gap: 2px; }
+  .filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .filter-btn .count {
+    background: var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .filter-btn.active .count {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── Main ─────────────────────────────────────────────────────── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+  }
+  .topbar-right { display: flex; gap: 12px; align-items: center; }
+
+  .search-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    color: var(--text);
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-box::placeholder { color: var(--muted); }
+  .search-box:focus { border-color: var(--accent); }
+
+  .refresh-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+
+  .content { padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 28px; }
+
+  /* ── Stat Cards ───────────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-accent, var(--accent));
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+  .stat-value {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .stat-sub { font-size: 11px; color: var(--muted); }
+
+  /* ── Charts Row ───────────────────────────────────────────────── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 180px;
+  }
+
+  /* ── Table Section ────────────────────────────────────────────── */
+  .table-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .table-count {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead tr {
+    background: var(--surface2);
+  }
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: var(--text); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td {
+    padding: 10px 16px;
+    vertical-align: middle;
+    max-width: 260px;
+  }
+
+  .company-cell { font-weight: 600; color: var(--text); }
+  .role-cell { color: var(--muted); }
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .url-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  .url-link:hover { text-decoration: underline; }
+
+  .method-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .method-tag.email { color: var(--green); border-color: #166534; background: #052e16; }
+  .method-tag.portal { color: var(--blue); border-color: #1d4ed8; background: #0c1a3e; }
+
+  .reason-cell {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .action-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+  }
+  .action-select:focus { border-color: var(--accent); }
+
+  .update-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .update-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* ── Hidden rows ──────────────────────────────────────────────── */
+  tr.hidden { display: none; }
+
+  /* ── Tooltip ──────────────────────────────────────────────────── */
+  [data-tip] { position: relative; cursor: default; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .charts-row { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 800px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🎯</div>
+      <span>Job Agent</span>
+    </div>
+
+    <nav class="nav-section">
+      <h4>Navigation</h4>
+      <a class="nav-item active" href="#">
+        <span>📊</span> Dashboard
+      </a>
+    </nav>
+
+    <div class="nav-section">
+      <h4>Filter by Status</h4>
+      <div class="status-filters">
+        <button class="filter-btn active" data-filter="all" onclick="filterStatus('all', this)">
+          All Jobs
+          <span class="count">{{ stats.total }}</span>
+        </button>
+        <button class="filter-btn" data-filter="⭐" onclick="filterStatus('⭐', this)">
+          ⭐ Interview
+          <span class="count">{{ stats.interview }}</span>
+        </button>
+        <button class="filter-btn" data-filter="📬" onclick="filterStatus('📬', this)">
+          📬 Response
+          <span class="count">{{ stats.response }}</span>
+        </button>
+        <button class="filter-btn" data-filter="🟢" onclick="filterStatus('🟢', this)">
+          🟢 Applied
+          <span class="count">{{ stats.applied }}</span>
+        </button>
+        <button class="filter-btn" data-filter="🟠" onclick="filterStatus('🟠', this)">
+          🟠 Queued
+          <span class="count">{{ stats.queued }}</span>
+        </button>
+        <button class="filter-btn" data-filter="🟡" onclick="filterStatus('🟡', this)">
+          🟡 Cover Letter
+          <span class="count">{{ stats.cover }}</span>
+        </button>
+        <button class="filter-btn" data-filter="🔵" onclick="filterStatus('🔵', this)">
+          🔵 Scored
+          <span class="count">{{ stats.scored }}</span>
+        </button>
+        <button class="filter-btn" data-filter="⚪" onclick="filterStatus('⚪', this)">
+          ⚪ Found
+          <span class="count">{{ stats.found }}</span>
+        </button>
+        <button class="filter-btn" data-filter="❌" onclick="filterStatus('❌', this)">
+          ❌ Rejected
+          <span class="count">{{ stats.rejected }}</span>
+        </button>
+        <button class="filter-btn" data-filter="⏭" onclick="filterStatus('⏭', this)">
+          ⏭ Skipped
+          <span class="count">{{ stats.skipped }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      Sheet: {{ sheet_name }}<br>
+      Auto-refreshes every 5 min
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <h1>Job Tracker</h1>
+      <div class="topbar-right">
+        <input
+          class="search-box"
+          type="text"
+          id="searchInput"
+          placeholder="Search company, role…"
+          oninput="filterSearch(this.value)"
+        >
+        <button class="refresh-btn" onclick="window.location.reload()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── STAT CARDS ── -->
+      <div class="stats-grid">
+        <div class="stat-card" style="--card-accent: var(--accent)">
+          <span class="stat-label">Total Found</span>
+          <span class="stat-value">{{ stats.total }}</span>
+          <span class="stat-sub">all time</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--green)">
+          <span class="stat-label">Applied</span>
+          <span class="stat-value">{{ stats.applied }}</span>
+          <span class="stat-sub">submitted</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--yellow)">
+          <span class="stat-label">Interviews</span>
+          <span class="stat-value">{{ stats.interview }}</span>
+          <span class="stat-sub">scheduled or booked</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--orange)">
+          <span class="stat-label">Queued</span>
+          <span class="stat-value">{{ stats.queued }}</span>
+          <span class="stat-sub">ready to submit</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--blue)">
+          <span class="stat-label">Avg Score</span>
+          <span class="stat-value">{{ stats.avg_score }}</span>
+          <span class="stat-sub">Claude fit score</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--purple)">
+          <span class="stat-label">Cover Letters</span>
+          <span class="stat-value">{{ stats.cover }}</span>
+          <span class="stat-sub">written</span>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--red)">
+          <span class="stat-label">Rejected</span>
+          <span class="stat-value">{{ stats.rejected }}</span>
+          <span class="stat-sub">closed</span>
+        </div>
+        <div class="stat-card" style="--card-accent: #3f4467">
+          <span class="stat-label">Skipped</span>
+          <span class="stat-value">{{ stats.skipped }}</span>
+          <span class="stat-sub">below threshold</span>
+        </div>
+      </div>
+
+      <!-- ── CHARTS ── -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Pipeline Status</h3>
+          <div class="chart-wrap">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Score Distribution</h3>
+          <div class="chart-wrap">
+            <canvas id="scoreChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>Source Breakdown</h3>
+          <div class="chart-wrap">
+            <canvas id="sourceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOB TABLE ── -->
+      <div class="table-section">
+        <div class="table-header">
+          <h2>All Jobs</h2>
+          <span class="table-count" id="tableCount">{{ jobs | length }} jobs</span>
+        </div>
+
+        <div class="table-wrap">
+          {% if jobs %}
+          <table id="jobTable">
+            <thead>
+              <tr>
+                <th onclick="sortTable(0)">Company ↕</th>
+                <th onclick="sortTable(1)">Role ↕</th>
+                <th onclick="sortTable(2)">Score ↕</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Date</th>
+                <th>Link</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="jobTableBody">
+              {% for job in jobs %}
+              <tr data-status="{{ job.get('Status', '') }}" data-search="{{ (job.get('Company','') + ' ' + job.get('Role Title','')).lower() }}">
+                <td class="company-cell">{{ job.get('Company', '—') }}</td>
+                <td class="role-cell">{{ job.get('Role Title', '—') }}</td>
+                <td>
+                  {% set s = job.get('Score', '') %}
+                  {% if s %}
+                    {% set sn = s | int %}
+                    {% if sn >= 8 %}
+                      <span class="score-badge" style="background:#052e16; color:#22c55e;">{{ sn }}</span>
+                    {% elif sn >= 6 %}
+                      <span class="score-badge" style="background:#1c1917; color:#f59e0b;">{{ sn }}</span>
+                    {% else %}
+                      <span class="score-badge" style="background:#1f1315; color:#f87171;">{{ sn }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span style="color:var(--muted)">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% set m = job.get('Apply Method', 'unknown') or 'unknown' %}
+                  <span class="method-tag {{ m }}">{{ m }}</span>
+                </td>
+                <td>
+                  {% set st = job.get('Status', '⚪ Found') %}
+                  {% set meta = status_meta(st) %}
+                  <span class="status-pill" style="background:{{ meta.bg }}; color:{{ meta.color }}">
+                    {{ st }}
+                  </span>
+                </td>
+                <td class="reason-cell" data-tip="{{ job.get('Score Reason', '') }}">
+                  {{ job.get('Score Reason', '—') }}
+                </td>
+                <td style="color:var(--muted); white-space:nowrap; font-size:12px;">
+                  {{ job.get('Date Found', '—') }}
+                </td>
+                <td>
+                  {% if job.get('Source URL') %}
+                    <a class="url-link" href="{{ job['Source URL'] }}" target="_blank" rel="noopener">Open ↗</a>
+                  {% else %}
+                    <span style="color:var(--muted)">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="POST" action="/update_status" style="display:flex;gap:6px;align-items:center;">
+                    <input type="hidden" name="url" value="{{ job.get('Source URL', '') }}">
+                    <select class="action-select" name="status">
+                      {% for s in all_statuses %}
+                        <option value="{{ s }}" {% if s == job.get('Status') %}selected{% endif %}>{{ s }}</option>
+                      {% endfor %}
+                    </select>
+                    <button class="update-btn" type="submit">Save</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <p>No jobs tracked yet.</p>
+            <p style="font-size:12px; margin-top:6px;">Run <code>python main.py --dry-run</code> to start.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+</div><!-- /shell -->
+
+<!-- ── CHARTS JS ── -->
+<script>
+const CHART_DEFAULTS = {
+  plugins: { legend: { display: false } },
+  responsive: true,
+  maintainAspectRatio: false,
+};
+const GRID = { color: 'rgba(255,255,255,0.05)' };
+const TICK = { color: '#7b82a8', font: { size: 11 } };
+
+// ── Status donut
+const statusData = {{ stats.status_counts | tojson }};
+const statusLabels = Object.keys(statusData);
+const statusValues = Object.values(statusData);
+const statusColors = statusLabels.map(l => {
+  if (l.includes('⭐')) return '#f59e0b';
+  if (l.includes('🟢')) return '#22c55e';
+  if (l.includes('📬')) return '#3b82f6';
+  if (l.includes('🟠')) return '#f97316';
+  if (l.includes('🟡')) return '#eab308';
+  if (l.includes('🔵')) return '#4f7cff';
+  if (l.includes('❌')) return '#ef4444';
+  if (l.includes('⏭')) return '#4b5563';
+  return '#6b7280';
+});
+
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: statusLabels,
+    datasets: [{ data: statusValues, backgroundColor: statusColors, borderWidth: 2, borderColor: '#1a1d27' }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'right',
+        labels: { color: '#7b82a8', font: { size: 10 }, boxWidth: 10, padding: 6 }
+      }
+    },
+    cutout: '65%',
+  }
+});
+
+// ── Score bar chart
+const scoreDist = {{ stats.score_dist | tojson }};
+const scoreLabels = Object.keys(scoreDist);
+const scoreValues = Object.values(scoreDist);
+const scoreColors = scoreLabels.map(n => {
+  const v = parseInt(n);
+  if (v >= 8) return '#22c55e';
+  if (v >= 6) return '#f59e0b';
+  return '#ef4444';
+});
+
+new Chart(document.getElementById('scoreChart'), {
+  type: 'bar',
+  data: {
+    labels: scoreLabels,
+    datasets: [{
+      data: scoreValues,
+      backgroundColor: scoreColors,
+      borderRadius: 4,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    scales: {
+      x: { grid: GRID, ticks: TICK },
+      y: { grid: GRID, ticks: { ...TICK, stepSize: 1 }, beginAtZero: true }
+    }
+  }
+});
+
+// ── Source donut
+const sourceData = {{ stats.by_source | tojson }};
+const sourceLabels = Object.keys(sourceData);
+const sourceValues = Object.values(sourceData);
+const sourceColors = ['#4f7cff','#7c4fff','#22c55e','#f97316','#f59e0b','#ef4444','#3b82f6','#a855f7'];
+
+new Chart(document.getElementById('sourceChart'), {
+  type: 'doughnut',
+  data: {
+    labels: sourceLabels,
+    datasets: [{ data: sourceValues, backgroundColor: sourceColors.slice(0, sourceLabels.length), borderWidth: 2, borderColor: '#1a1d27' }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'right',
+        labels: { color: '#7b82a8', font: { size: 10 }, boxWidth: 10, padding: 6 }
+      }
+    },
+    cutout: '65%',
+  }
+});
+
+// ── Filter by status (sidebar)
+let activeFilter = 'all';
+let activeSearch = '';
+
+function filterStatus(emoji, btn) {
+  activeFilter = emoji;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterSearch(val) {
+  activeSearch = val.toLowerCase();
+  applyFilters();
+}
+
+function applyFilters() {
+  const rows = document.querySelectorAll('#jobTableBody tr');
+  let visible = 0;
+  rows.forEach(row => {
+    const status = row.dataset.status || '';
+    const search = row.dataset.search || '';
+    const statusMatch = activeFilter === 'all' || status.includes(activeFilter);
+    const searchMatch = !activeSearch || search.includes(activeSearch);
+    if (statusMatch && searchMatch) {
+      row.classList.remove('hidden');
+      visible++;
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+  document.getElementById('tableCount').textContent = visible + ' jobs';
+}
+
+// ── Sort table
+let sortDir = {};
+function sortTable(col) {
+  const tbody = document.getElementById('jobTableBody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const dir = sortDir[col] = -(sortDir[col] || 1);
+  rows.sort((a, b) => {
+    const aVal = a.cells[col]?.textContent.trim() || '';
+    const bVal = b.cells[col]?.textContent.trim() || '';
+    const aNum = parseFloat(aVal);
+    const bNum = parseFloat(bVal);
+    if (!isNaN(aNum) && !isNaN(bNum)) return dir * (aNum - bNum);
+    return dir * aVal.localeCompare(bVal);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ── Auto-refresh every 5 minutes
+setTimeout(() => window.location.reload(), 5 * 60 * 1000);
+</script>
+
+</body>
+</html>

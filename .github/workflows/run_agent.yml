@@ -1,0 +1,78 @@
+name: Run Job Agent
+
+on:
+  schedule:
+    # 8:00 AM UTC, Monday–Friday
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no form fills or emails)?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: playwright install chromium --with-deps
+
+      - name: Decode Google service account credentials
+        run: |
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" | base64 --decode > credentials.json
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+
+      - name: Run job agent
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python main.py --dry-run
+          else
+            python main.py
+          fi
+        env:
+          ANTHROPIC_API_KEY:        ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY:           ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CSE_ID:            ${{ secrets.GOOGLE_CSE_ID }}
+          GOOGLE_CREDENTIALS_JSON:  ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GMAIL_USER:               ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD:       ${{ secrets.GMAIL_APP_PASSWORD }}
+          MY_EMAIL:                 ${{ secrets.MY_EMAIL }}
+          CI:                       "true"
+
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-agent-screenshots-${{ github.run_number }}
+          path: output/screenshots/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload cover letters artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-agent-cover-letters-${{ github.run_number }}
+          path: output/cover_letters/
+          if-no-files-found: ignore
+          retention-days: 30
