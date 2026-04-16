@@ -737,7 +737,7 @@ td { padding: 9px 14px; vertical-align: middle; }
                   {% set sn = s | int %}
                   {% if sn >= 8 %}
                     <span class="score-badge" style="background:#052e16;color:#34d399;">{{ sn }}</span>
-                  {% elif sn >= config_score_threshold | default(7) %}
+                  {% elif sn >= score_threshold %}
                     <span class="score-badge" style="background:#1c1408;color:#fbbf24;">{{ sn }}</span>
                   {% else %}
                     <span class="score-badge" style="background:#1f0e0e;color:#f87171;">{{ sn }}</span>
@@ -950,7 +950,7 @@ function filterStatus(v, btn) {
 }
 function filterSource(v, chip) {
   fSource = fSource === v ? 'all' : v;
-  document.querySelectorAll('[data-source-chip]').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('[data-source]').forEach(c => c.classList.remove('active'));
   if (fSource !== 'all') chip.classList.add('active');
   applyFilters();
 }

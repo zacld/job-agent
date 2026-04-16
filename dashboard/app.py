@@ -44,6 +44,77 @@ def _load_jobs() -> list[dict]:
         return []
 
 
+def _mock_jobs() -> list[dict]:
+    """Mock data for local testing when sheet is unavailable."""
+    today = date.today().isoformat()
+    eight_days_ago = (date.today() - timedelta(days=8)).isoformat()
+    return [
+        {
+            "Date Found": today, "Company": "CyberShield Brokers", "Role Title": "Cyber Insurance Sales Executive",
+            "Source URL": "https://reed.co.uk/jobs/cyber-insurance/1001",
+            "Score": 9, "Score Reason": "Perfect fit — B2B closing background + cyber degree directly maps to cyber insurance sales. Client base (CISOs, risk managers) aligns with Zac's consultative sales style.",
+            "Apply Method": "email", "Status": "🟡 Cover Letter Written", "Date Applied": "",
+            "Cover Letter Path": json.dumps(["/output/cover_letters/CyberShield_Cyber_Insurance_2026-04-16_v1.txt", "/output/cover_letters/CyberShield_Cyber_Insurance_2026-04-16_v2.txt"]),
+            "Contact Email": "careers@cybershield.co.uk", "Response": "", "Notes": "Salary: 55000–80000 (within_target)",
+        },
+        {
+            "Date Found": today, "Company": "InsurTech Ventures", "Role Title": "BDM InsurTech",
+            "Source URL": "https://linkedin.com/jobs/view/2002",
+            "Score": 8, "Score Reason": "Strong match — digital transformation sales experience at Gro.Team maps directly. InsurTech SaaS selling to insurers.",
+            "Apply Method": "portal", "Status": "🟠 Queued", "Date Applied": "",
+            "Cover Letter Path": json.dumps(["/output/cover_letters/InsurTech_BDM_2026-04-16_v1.txt"]),
+            "Contact Email": "", "Response": "", "Notes": "Salary: 60000–90000 (above_target) Screenshot: /output/screenshots/InsurTech_BDM_2026-04-16.png",
+        },
+        {
+            "Date Found": eight_days_ago, "Company": "Dojo Payments", "Role Title": "Senior Fintech Sales Consultant",
+            "Source URL": "https://adzuna.co.uk/jobs/3003",
+            "Score": 7, "Score Reason": "Direct experience — currently at Dojo. Internal progression opportunity. High-volume outbound expertise matches.",
+            "Apply Method": "email", "Status": "🟢 Applied", "Date Applied": eight_days_ago,
+            "Cover Letter Path": json.dumps(["/output/cover_letters/Dojo_Senior_Fintech_2026-04-08_v1.txt"]),
+            "Contact Email": "internal.jobs@dojo.tech", "Response": "", "Notes": "Salary: 50000–70000 (within_target)",
+        },
+        {
+            "Date Found": today, "Company": "Paladin Cyber", "Role Title": "Cybersecurity Sales Executive",
+            "Source URL": "https://workable.com/jobs/4004",
+            "Score": 9, "Score Reason": "Exceptional fit — cybersecurity dissertation + B2B SaaS sales = rare combination. Paladin sells to SMEs exactly like Zac's Gro.Team profile.",
+            "Apply Method": "portal", "Status": "⭐ Interview", "Date Applied": today,
+            "Cover Letter Path": json.dumps(["/output/cover_letters/Paladin_Cybersec_2026-04-16_v1.txt"]),
+            "Contact Email": "talent@paladincyber.com", "Response": "Interview booked Fri 18 Apr", "Notes": "Salary: 65000–95000 (above_target)",
+        },
+        {
+            "Date Found": today, "Company": "Acuity Insurance", "Role Title": "Portfolio Manager",
+            "Source URL": "https://reed.co.uk/jobs/portfolio-manager/5005",
+            "Score": 5, "Score Reason": "Low fit — role requires 5+ years actuarial experience. Zac's sales background doesn't map.",
+            "Apply Method": "unknown", "Status": "⏭ Skipped", "Date Applied": "",
+            "Cover Letter Path": "", "Contact Email": "", "Response": "", "Notes": "Salary: 40000–50000 (below_target)",
+        },
+        {
+            "Date Found": today, "Company": "DataSec Partners", "Role Title": "Enterprise Account Executive",
+            "Source URL": "https://linkedin.com/jobs/view/6006",
+            "Score": 8, "Score Reason": "Strong enterprise SaaS fit. Multi-stakeholder sales cycle experience from Gro.Team is directly relevant.",
+            "Apply Method": "email", "Status": "🔵 Scored", "Date Applied": "",
+            "Cover Letter Path": "",
+            "Contact Email": "hire@datasec.io", "Response": "", "Notes": "Salary: 60000–85000 (within_target)",
+        },
+        {
+            "Date Found": eight_days_ago, "Company": "ThreatGuard Ltd", "Role Title": "IT Sales Consultant",
+            "Source URL": "https://totaljobs.com/jobs/7007",
+            "Score": 7, "Score Reason": "Good fit — IT security consulting sales, technical literacy matches Zac's automation and recon tools background.",
+            "Apply Method": "email", "Status": "🟢 Applied", "Date Applied": eight_days_ago,
+            "Cover Letter Path": json.dumps(["/output/cover_letters/ThreatGuard_IT_Sales_2026-04-08_v1.txt"]),
+            "Contact Email": "jobs@threatguard.co.uk", "Response": "", "Notes": "Salary: 48000–65000 (within_target) [FOLLOWUP_SENT] Draft: Following up on IT Sales Consultant application — ThreatGuard",
+        },
+        {
+            "Date Found": today, "Company": "FinSecure UK", "Role Title": "Cyber Sales Executive",
+            "Source URL": "https://adzuna.co.uk/jobs/8008",
+            "Score": 6, "Score Reason": "Moderate fit — smaller company, lower OTE than target, but cyber insurance vertical is relevant.",
+            "Apply Method": "portal", "Status": "❌ Rejected", "Date Applied": today,
+            "Cover Letter Path": json.dumps(["/output/cover_letters/FinSecure_Cyber_2026-04-16_v1.txt"]),
+            "Contact Email": "", "Response": "Position filled internally", "Notes": "Salary: 42000–55000 (below_target)",
+        },
+    ]
+
+
 def _parse_salary_from_notes(notes: str) -> dict:
     """Extract salary_min, salary_max, market_alignment from Notes string."""
     result = {"salary_min": None, "salary_max": None, "market": "unknown"}
@@ -234,7 +305,8 @@ def _market_meta(market: str) -> dict:
 
 @app.route("/")
 def index():
-    jobs = _load_jobs()
+    use_mock = request.args.get("mock") == "1"
+    jobs = _mock_jobs() if use_mock else _load_jobs()
     jobs = [_enrich_job(j) for j in jobs]
     stats = _compute_stats(jobs)
 
