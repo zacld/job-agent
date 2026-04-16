@@ -6,853 +6,1017 @@
 <title>Job Agent — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  /* ── Reset & Base ─────────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg:       #0f1117;
-    --surface:  #1a1d27;
-    --surface2: #22263a;
-    --border:   #2a2f45;
-    --text:     #e8eaf6;
-    --muted:    #7b82a8;
-    --accent:   #4f7cff;
-    --accent2:  #7c4fff;
-    --green:    #22c55e;
-    --yellow:   #f59e0b;
-    --orange:   #f97316;
-    --red:      #ef4444;
-    --blue:     #3b82f6;
-    --purple:   #a855f7;
-    --radius:   12px;
-    --radius-sm:6px;
-  }
+:root {
+  --bg:        #0b0d14;
+  --surface:   #13161f;
+  --surface2:  #1a1e2e;
+  --surface3:  #20243a;
+  --border:    #252a40;
+  --border2:   #2f3550;
+  --text:      #e2e8f8;
+  --text2:     #a8b2d0;
+  --muted:     #5a6585;
+  --accent:    #4f7cff;
+  --accent2:   #7c4fff;
+  --green:     #34d399;
+  --yellow:    #fbbf24;
+  --orange:    #fb923c;
+  --red:       #f87171;
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --teal:      #2dd4bf;
+  --r:         14px;
+  --r-sm:      7px;
+  --r-xs:      4px;
+}
 
-  html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.5;
-    min-height: 100vh;
-  }
+/* ── Shell ───────────────────────────────────────────────────────────── */
+.shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
 
-  /* ── Layout ───────────────────────────────────────────────────── */
-  .shell {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    min-height: 100vh;
-  }
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  position: sticky; top: 0;
+  height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 28px;
+}
 
-  /* ── Sidebar ──────────────────────────────────────────────────── */
-  .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 28px 20px;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
+.logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; letter-spacing: -0.4px; }
+.logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  box-shadow: 0 4px 12px rgba(79,124,255,.35);
+}
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-  .logo-icon {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
+.nav-label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted); margin-bottom: 6px;
+}
 
-  .nav-section h4 {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
+.filter-list { display: flex; flex-direction: column; gap: 1px; }
+.filter-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 9px; border-radius: var(--r-sm);
+  background: none; border: none; width: 100%;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+  transition: background .12s, color .12s;
+  text-align: left;
+}
+.filter-btn:hover  { background: var(--surface2); color: var(--text); }
+.filter-btn.active { background: var(--surface3); color: var(--text); }
+.filter-btn .pill {
+  font-size: 10px; font-weight: 700; padding: 1px 7px;
+  border-radius: 20px; background: var(--border); color: var(--muted);
+  transition: background .12s, color .12s;
+}
+.filter-btn.active .pill { background: var(--accent); color: #fff; }
 
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 13px;
-    transition: background 0.15s, color 0.15s;
-    text-decoration: none;
-  }
-  .nav-item:hover, .nav-item.active {
-    background: var(--surface2);
-    color: var(--text);
-  }
-  .nav-item .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+.followup-alert {
+  background: linear-gradient(135deg, #3b1500 0%, #2a1200 100%);
+  border: 1px solid #7c3400;
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--orange);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.followup-alert strong { display: block; font-size: 12px; margin-bottom: 2px; }
 
-  .status-filters { display: flex; flex-direction: column; gap: 2px; }
-  .filter-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--muted);
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    transition: background 0.15s, color 0.15s;
-  }
-  .filter-btn:hover, .filter-btn.active {
-    background: var(--surface2);
-    color: var(--text);
-  }
-  .filter-btn .count {
-    background: var(--border);
-    color: var(--muted);
-    font-size: 10px;
-    padding: 1px 6px;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-  .filter-btn.active .count {
-    background: var(--accent);
-    color: #fff;
-  }
+.sidebar-foot { margin-top: auto; font-size: 10px; color: var(--muted); line-height: 1.8; }
+.sidebar-foot a { color: var(--accent); text-decoration: none; }
 
-  .sidebar-footer {
-    margin-top: auto;
-    font-size: 11px;
-    color: var(--muted);
-  }
+/* ── Main ────────────────────────────────────────────────────────────── */
+.main { display: flex; flex-direction: column; min-height: 100vh; }
 
-  /* ── Main ─────────────────────────────────────────────────────── */
-  .main {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 14px 26px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 60;
+  backdrop-filter: blur(8px);
+}
+.topbar-left { display: flex; align-items: baseline; gap: 12px; }
+.topbar h1 { font-size: 17px; font-weight: 800; letter-spacing: -.5px; }
+.topbar-subtitle { font-size: 11px; color: var(--muted); }
+.topbar-right { display: flex; gap: 10px; align-items: center; }
 
-  .topbar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-  .topbar h1 {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
-  }
-  .topbar-right { display: flex; gap: 12px; align-items: center; }
+.search-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 7px 12px;
+  color: var(--text); font-size: 12px; width: 210px; outline: none;
+  transition: border-color .15s;
+}
+.search-box::placeholder { color: var(--muted); }
+.search-box:focus { border-color: var(--accent); }
 
-  .search-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 7px 12px;
-    color: var(--text);
-    font-size: 13px;
-    width: 220px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .search-box::placeholder { color: var(--muted); }
-  .search-box:focus { border-color: var(--accent); }
+.btn {
+  padding: 7px 14px; border-radius: var(--r-sm); font-size: 12px;
+  font-weight: 700; cursor: pointer; border: none; transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: .88; }
+.btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--text); }
 
-  .refresh-btn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 7px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: opacity 0.15s;
-  }
-  .refresh-btn:hover { opacity: 0.85; }
+/* ── Alert banner ───────────────────────────────────────────────────── */
+.alert-bar {
+  background: linear-gradient(90deg, #2d1500 0%, #1a0e00 100%);
+  border-bottom: 1px solid #7c3400;
+  padding: 10px 26px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12px; color: var(--orange);
+}
+.alert-bar strong { font-weight: 700; }
+.alert-bar a { color: var(--orange); font-weight: 700; text-decoration: underline; cursor: pointer; }
+.alert-bar.hidden { display: none; }
 
-  .content { padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 28px; }
+/* ── Content ─────────────────────────────────────────────────────────── */
+.content { padding: 24px 26px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
 
-  /* ── Stat Cards ───────────────────────────────────────────────── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .stat-card:hover { border-color: var(--accent); }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--card-accent, var(--accent));
-  }
-  .stat-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-  }
-  .stat-value {
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: var(--text);
-  }
-  .stat-sub { font-size: 11px; color: var(--muted); }
+/* ── Stat grid ──────────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 18px 14px;
+  position: relative; overflow: hidden;
+  transition: border-color .2s, transform .15s;
+  cursor: default;
+}
+.stat-card:hover { border-color: var(--card-accent, var(--accent)); transform: translateY(-2px); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--card-accent, var(--accent));
+}
+.stat-card::after {
+  content: ''; position: absolute;
+  top: -30px; right: -30px; width: 80px; height: 80px;
+  background: var(--card-accent, var(--accent));
+  opacity: .04; border-radius: 50%;
+}
+.stat-icon  { font-size: 18px; margin-bottom: 8px; }
+.stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); }
+.stat-value { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; line-height: 1.1; margin: 4px 0 2px; }
+.stat-sub   { font-size: 10px; color: var(--muted); }
 
-  /* ── Charts Row ───────────────────────────────────────────────── */
-  .charts-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-  }
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-  .chart-card h3 {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .chart-wrap {
-    position: relative;
-    height: 180px;
-  }
+/* ── Charts row ─────────────────────────────────────────────────────── */
+.charts-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 14px; }
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px;
+}
+.chart-card h3 {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .9px; color: var(--muted); margin-bottom: 14px;
+}
+.chart-wrap { position: relative; height: 170px; }
 
-  /* ── Table Section ────────────────────────────────────────────── */
-  .table-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .table-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .table-header h2 {
-    font-size: 15px;
-    font-weight: 700;
-  }
-  .table-count {
-    font-size: 12px;
-    color: var(--muted);
-  }
+/* ── Follow-up panel ────────────────────────────────────────────────── */
+.followup-panel {
+  background: var(--surface);
+  border: 1px solid #7c3400;
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.followup-panel-header {
+  background: linear-gradient(90deg, #2d1500 0%, #1f0f00 100%);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #7c3400;
+}
+.followup-panel-header h2 { font-size: 14px; font-weight: 700; color: var(--orange); }
+.followup-panel-header span { font-size: 11px; color: #b45309; }
 
-  .table-wrap { overflow-x: auto; }
+.followup-items { display: flex; flex-direction: column; }
+.followup-item {
+  display: grid; grid-template-columns: 1fr 1fr auto auto;
+  gap: 16px; align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.followup-item:last-child { border-bottom: none; }
+.followup-item:hover { background: var(--surface2); }
+.followup-item .co   { font-weight: 700; font-size: 13px; }
+.followup-item .role { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.followup-item .days-badge {
+  font-size: 11px; font-weight: 700; color: var(--orange);
+  background: #3b1500; border: 1px solid #7c3400;
+  padding: 2px 9px; border-radius: 20px; white-space: nowrap;
+}
+.followup-draft {
+  font-size: 11px; color: var(--text2); font-style: italic;
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  thead tr {
-    background: var(--surface2);
-  }
-  th {
-    padding: 10px 16px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--muted);
-    white-space: nowrap;
-    cursor: pointer;
-    user-select: none;
-  }
-  th:hover { color: var(--text); }
+/* ── Table section ──────────────────────────────────────────────────── */
+.table-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.table-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.table-header h2 { font-size: 14px; font-weight: 800; }
+.table-header-right { display: flex; align-items: center; gap: 10px; }
+.table-count { font-size: 11px; color: var(--muted); }
 
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
-  }
-  tbody tr:hover { background: var(--surface2); }
-  tbody tr:last-child { border-bottom: none; }
+.filter-row {
+  padding: 10px 20px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap;
+  background: var(--surface2);
+}
+.chip {
+  padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  border: 1px solid var(--border2); color: var(--text2); background: var(--surface);
+  cursor: pointer; transition: background .12s, border-color .12s, color .12s;
+}
+.chip:hover  { border-color: var(--accent); color: var(--text); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  td {
-    padding: 10px 16px;
-    vertical-align: middle;
-    max-width: 260px;
-  }
+.table-wrap { overflow-x: auto; }
 
-  .company-cell { font-weight: 600; color: var(--text); }
-  .role-cell { color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--surface2); }
+th {
+  padding: 9px 14px; text-align: left;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--muted); white-space: nowrap;
+  cursor: pointer; user-select: none; border-bottom: 1px solid var(--border);
+}
+th:hover { color: var(--text); }
+th .sort-icon { opacity: .4; margin-left: 3px; }
 
-  .score-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    font-weight: 800;
-    font-size: 13px;
-  }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:hover { background: var(--surface2); }
+tbody tr.followup-row td:first-child { border-left: 2px solid var(--orange); }
+tbody tr.expanded { background: var(--surface2); }
+tbody tr.detail-row td { background: var(--surface3); padding: 0; }
+tbody tr.detail-row.hidden, tr.hidden { display: none; }
+tbody tr:last-child { border-bottom: none; }
 
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+td { padding: 9px 14px; vertical-align: middle; }
 
-  .url-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 12px;
-  }
-  .url-link:hover { text-decoration: underline; }
+/* ── Cell types ─────────────────────────────────────────────────────── */
+.c-company { font-weight: 700; color: var(--text); max-width: 160px; }
+.c-company small { display: block; font-size: 10px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+.c-role { color: var(--text2); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .method-tag {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-  .method-tag.email { color: var(--green); border-color: #166534; background: #052e16; }
-  .method-tag.portal { color: var(--blue); border-color: #1d4ed8; background: #0c1a3e; }
+.score-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 7px;
+  font-weight: 900; font-size: 13px;
+}
 
-  .reason-cell {
-    font-size: 12px;
-    color: var(--muted);
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
 
-  .action-select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
-    font-size: 12px;
-    cursor: pointer;
-    outline: none;
-  }
-  .action-select:focus { border-color: var(--accent); }
+.market-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 4px;
+  font-size: 9px; font-weight: 700; white-space: nowrap;
+  border: 1px solid transparent;
+}
 
-  .update-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .update-btn:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
+.salary-cell { white-space: nowrap; font-size: 11px; }
+.salary-val  { color: var(--text2); }
+.salary-na   { color: var(--muted); font-style: italic; }
 
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.method-tag {
+  padding: 2px 8px; border-radius: var(--r-xs);
+  font-size: 10px; font-weight: 700;
+  background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+}
+.method-tag.email   { color: var(--green);  border-color: #064e3b; background: #022c22; }
+.method-tag.portal  { color: var(--blue);   border-color: #1d4ed8; background: #0c1a3e; }
+.method-tag.unknown { color: var(--muted);  border-color: var(--border); }
 
-  /* ── Hidden rows ──────────────────────────────────────────────── */
-  tr.hidden { display: none; }
+.cl-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: var(--r-xs);
+  font-size: 10px; font-weight: 700;
+  background: #1e1b4b; color: var(--purple); border: 1px solid #312e81;
+}
 
-  /* ── Tooltip ──────────────────────────────────────────────────── */
-  [data-tip] { position: relative; cursor: default; }
-  [data-tip]:hover::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #000;
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    white-space: nowrap;
-    z-index: 100;
-    pointer-events: none;
-  }
+.fu-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+  background: #3b1500; color: var(--orange); border: 1px solid #7c3400;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
 
-  /* ── Responsive ───────────────────────────────────────────────── */
-  @media (max-width: 1100px) {
-    .charts-row { grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 800px) {
-    .shell { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
-    .charts-row { grid-template-columns: 1fr; }
-  }
+.url-link { color: var(--accent); text-decoration: none; font-size: 11px; }
+.url-link:hover { text-decoration: underline; }
+
+/* ── Inline status edit ─────────────────────────────────────────────── */
+.action-select {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--r-xs);
+  padding: 4px 7px; font-size: 11px; cursor: pointer; outline: none;
+  max-width: 160px;
+}
+.action-select:focus { border-color: var(--accent); }
+.save-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: var(--r-xs); padding: 4px 9px; font-size: 10px;
+  cursor: pointer; font-weight: 700; transition: all .12s;
+}
+.save-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── Expand toggle ──────────────────────────────────────────────────── */
+.expand-btn {
+  background: none; border: none; color: var(--muted);
+  font-size: 14px; cursor: pointer; padding: 2px 4px;
+  transition: color .12s, transform .2s;
+  line-height: 1;
+}
+.expand-btn:hover { color: var(--text); }
+.expand-btn.open { transform: rotate(90deg); color: var(--accent); }
+
+/* ── Detail drawer ──────────────────────────────────────────────────── */
+.detail-inner {
+  padding: 16px 20px 18px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  font-size: 12px;
+}
+.detail-block h4 {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted); margin-bottom: 6px;
+}
+.detail-block p, .detail-block pre {
+  color: var(--text2); line-height: 1.6; white-space: pre-wrap;
+  max-height: 180px; overflow-y: auto;
+}
+.detail-block pre {
+  font-family: inherit; font-size: 11px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-xs); padding: 10px 12px;
+}
+.cl-versions { display: flex; flex-direction: column; gap: 5px; }
+.cl-version-link {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--purple); text-decoration: none;
+}
+.cl-version-link:hover { text-decoration: underline; }
+
+/* ── Empty ──────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 60px 24px; color: var(--muted);
+}
+.empty-state .icon { font-size: 44px; margin-bottom: 12px; }
+.empty-state code {
+  background: var(--surface2); padding: 2px 7px;
+  border-radius: var(--r-xs); font-size: 11px; color: var(--text2);
+}
+
+/* ── Misc ───────────────────────────────────────────────────────────── */
+[data-tip] { position: relative; cursor: default; }
+[data-tip]:hover::after {
+  content: attr(data-tip); position: absolute;
+  bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: #000; color: #fff; padding: 4px 10px;
+  border-radius: var(--r-xs); font-size: 10px; white-space: nowrap;
+  z-index: 200; pointer-events: none; max-width: 320px;
+  white-space: normal; text-align: left; line-height: 1.5;
+}
+.divider { border: none; border-top: 1px solid var(--border); }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1400px) { .stats-grid { grid-template-columns: repeat(5,1fr); } }
+@media (max-width: 1200px) { .charts-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px)  {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .stats-grid { grid-template-columns: repeat(3,1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
-
 <div class="shell">
 
-  <!-- ── SIDEBAR ── -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-icon">🎯</div>
-      <span>Job Agent</span>
+<!-- ══════════════════════════════ SIDEBAR ══════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🎯</div>
+    <span>Job Agent</span>
+  </div>
+
+  <!-- Follow-up alert -->
+  {% if followup_jobs %}
+  <div class="followup-alert">
+    <span style="font-size:16px;flex-shrink:0">🔔</span>
+    <div>
+      <strong>{{ followup_jobs | length }} follow-up{{ 's' if followup_jobs|length > 1 else '' }} due</strong>
+      Jobs applied 7+ days ago with no response tracked.
     </div>
+  </div>
+  {% endif %}
 
-    <nav class="nav-section">
-      <h4>Navigation</h4>
-      <a class="nav-item active" href="#">
-        <span>📊</span> Dashboard
-      </a>
-    </nav>
-
-    <div class="nav-section">
-      <h4>Filter by Status</h4>
-      <div class="status-filters">
-        <button class="filter-btn active" data-filter="all" onclick="filterStatus('all', this)">
-          All Jobs
-          <span class="count">{{ stats.total }}</span>
-        </button>
-        <button class="filter-btn" data-filter="⭐" onclick="filterStatus('⭐', this)">
-          ⭐ Interview
-          <span class="count">{{ stats.interview }}</span>
-        </button>
-        <button class="filter-btn" data-filter="📬" onclick="filterStatus('📬', this)">
-          📬 Response
-          <span class="count">{{ stats.response }}</span>
-        </button>
-        <button class="filter-btn" data-filter="🟢" onclick="filterStatus('🟢', this)">
-          🟢 Applied
-          <span class="count">{{ stats.applied }}</span>
-        </button>
-        <button class="filter-btn" data-filter="🟠" onclick="filterStatus('🟠', this)">
-          🟠 Queued
-          <span class="count">{{ stats.queued }}</span>
-        </button>
-        <button class="filter-btn" data-filter="🟡" onclick="filterStatus('🟡', this)">
-          🟡 Cover Letter
-          <span class="count">{{ stats.cover }}</span>
-        </button>
-        <button class="filter-btn" data-filter="🔵" onclick="filterStatus('🔵', this)">
-          🔵 Scored
-          <span class="count">{{ stats.scored }}</span>
-        </button>
-        <button class="filter-btn" data-filter="⚪" onclick="filterStatus('⚪', this)">
-          ⚪ Found
-          <span class="count">{{ stats.found }}</span>
-        </button>
-        <button class="filter-btn" data-filter="❌" onclick="filterStatus('❌', this)">
-          ❌ Rejected
-          <span class="count">{{ stats.rejected }}</span>
-        </button>
-        <button class="filter-btn" data-filter="⏭" onclick="filterStatus('⏭', this)">
-          ⏭ Skipped
-          <span class="count">{{ stats.skipped }}</span>
-        </button>
-      </div>
+  <!-- Status filters -->
+  <div>
+    <div class="nav-label">Filter by Status</div>
+    <div class="filter-list">
+      <button class="filter-btn active" data-filter="all" onclick="filterStatus('all',this)">
+        All Jobs <span class="pill">{{ stats.total }}</span>
+      </button>
+      <button class="filter-btn" data-filter="⭐" onclick="filterStatus('⭐',this)">
+        ⭐ Interview <span class="pill">{{ stats.interview }}</span>
+      </button>
+      <button class="filter-btn" data-filter="📬" onclick="filterStatus('📬',this)">
+        📬 Response <span class="pill">{{ stats.response }}</span>
+      </button>
+      <button class="filter-btn" data-filter="🟢" onclick="filterStatus('🟢',this)">
+        🟢 Applied <span class="pill">{{ stats.applied }}</span>
+      </button>
+      <button class="filter-btn" data-filter="🟠" onclick="filterStatus('🟠',this)">
+        🟠 Queued <span class="pill">{{ stats.queued }}</span>
+      </button>
+      <button class="filter-btn" data-filter="🟡" onclick="filterStatus('🟡',this)">
+        🟡 Cover Letter <span class="pill">{{ stats.cover }}</span>
+      </button>
+      <button class="filter-btn" data-filter="🔵" onclick="filterStatus('🔵',this)">
+        🔵 Scored <span class="pill">{{ stats.scored }}</span>
+      </button>
+      <button class="filter-btn" data-filter="⚪" onclick="filterStatus('⚪',this)">
+        ⚪ Found <span class="pill">{{ stats.found }}</span>
+      </button>
+      <button class="filter-btn" data-filter="❌" onclick="filterStatus('❌',this)">
+        ❌ Rejected <span class="pill">{{ stats.rejected }}</span>
+      </button>
+      <button class="filter-btn" data-filter="⏭" onclick="filterStatus('⏭',this)">
+        ⏭ Skipped <span class="pill">{{ stats.skipped }}</span>
+      </button>
     </div>
+  </div>
 
-    <div class="sidebar-footer">
-      Sheet: {{ sheet_name }}<br>
-      Auto-refreshes every 5 min
+  <!-- Source filters -->
+  <div>
+    <div class="nav-label">Filter by Source</div>
+    <div class="filter-list">
+      {% for src, cnt in stats.by_source.items() %}
+      <button class="filter-btn" data-source="{{ src }}" onclick="filterSource('{{ src }}',this)">
+        {{ src }} <span class="pill">{{ cnt }}</span>
+      </button>
+      {% endfor %}
     </div>
-  </aside>
+  </div>
 
-  <!-- ── MAIN ── -->
-  <div class="main">
+  <div class="sidebar-foot">
+    Sheet: <strong>{{ sheet_name }}</strong><br>
+    Score threshold: ≥{{ score_threshold }}<br>
+    Salary min: £{{ "{:,}".format(salary_min) }}<br>
+    Auto-refreshes every 5 min
+  </div>
+</aside>
 
-    <!-- Topbar -->
-    <header class="topbar">
+<!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
       <h1>Job Tracker</h1>
-      <div class="topbar-right">
-        <input
-          class="search-box"
-          type="text"
-          id="searchInput"
-          placeholder="Search company, role…"
-          oninput="filterSearch(this.value)"
-        >
-        <button class="refresh-btn" onclick="window.location.reload()">↻ Refresh</button>
+      <span class="topbar-subtitle">{{ stats.total }} jobs tracked</span>
+    </div>
+    <div class="topbar-right">
+      <input class="search-box" type="text" id="searchInput"
+             placeholder="Search company, role, source…"
+             oninput="filterSearch(this.value)">
+      <button class="btn btn-ghost" onclick="window.location.reload()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <!-- Follow-up alert bar -->
+  {% if followup_jobs %}
+  <div class="alert-bar" id="followupBar">
+    <span style="font-size:16px">🔔</span>
+    <span><strong>{{ followup_jobs | length }} job{{ 's' if followup_jobs|length > 1 else '' }}</strong>
+    applied 7+ days ago need a follow-up —
+    <a onclick="document.getElementById('followupPanel').scrollIntoView({behavior:'smooth'})">review below ↓</a></span>
+  </div>
+  {% endif %}
+
+  <div class="content">
+
+    <!-- ── STAT CARDS ─────────────────────────────────────────────── -->
+    <div class="stats-grid">
+      <div class="stat-card" style="--card-accent:var(--accent)">
+        <div class="stat-icon">📋</div>
+        <div class="stat-label">Total Found</div>
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-sub">all time</div>
       </div>
-    </header>
-
-    <div class="content">
-
-      <!-- ── STAT CARDS ── -->
-      <div class="stats-grid">
-        <div class="stat-card" style="--card-accent: var(--accent)">
-          <span class="stat-label">Total Found</span>
-          <span class="stat-value">{{ stats.total }}</span>
-          <span class="stat-sub">all time</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--green)">
-          <span class="stat-label">Applied</span>
-          <span class="stat-value">{{ stats.applied }}</span>
-          <span class="stat-sub">submitted</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--yellow)">
-          <span class="stat-label">Interviews</span>
-          <span class="stat-value">{{ stats.interview }}</span>
-          <span class="stat-sub">scheduled or booked</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--orange)">
-          <span class="stat-label">Queued</span>
-          <span class="stat-value">{{ stats.queued }}</span>
-          <span class="stat-sub">ready to submit</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--blue)">
-          <span class="stat-label">Avg Score</span>
-          <span class="stat-value">{{ stats.avg_score }}</span>
-          <span class="stat-sub">Claude fit score</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--purple)">
-          <span class="stat-label">Cover Letters</span>
-          <span class="stat-value">{{ stats.cover }}</span>
-          <span class="stat-sub">written</span>
-        </div>
-        <div class="stat-card" style="--card-accent: var(--red)">
-          <span class="stat-label">Rejected</span>
-          <span class="stat-value">{{ stats.rejected }}</span>
-          <span class="stat-sub">closed</span>
-        </div>
-        <div class="stat-card" style="--card-accent: #3f4467">
-          <span class="stat-label">Skipped</span>
-          <span class="stat-value">{{ stats.skipped }}</span>
-          <span class="stat-sub">below threshold</span>
-        </div>
+      <div class="stat-card" style="--card-accent:var(--green)">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Applied</div>
+        <div class="stat-value">{{ stats.applied }}</div>
+        <div class="stat-sub">{{ stats.emailed }} via email · {{ stats.queued }} queued</div>
       </div>
-
-      <!-- ── CHARTS ── -->
-      <div class="charts-row">
-        <div class="chart-card">
-          <h3>Pipeline Status</h3>
-          <div class="chart-wrap">
-            <canvas id="statusChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-card">
-          <h3>Score Distribution</h3>
-          <div class="chart-wrap">
-            <canvas id="scoreChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-card">
-          <h3>Source Breakdown</h3>
-          <div class="chart-wrap">
-            <canvas id="sourceChart"></canvas>
-          </div>
-        </div>
+      <div class="stat-card" style="--card-accent:var(--yellow)">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-label">Interviews</div>
+        <div class="stat-value">{{ stats.interview }}</div>
+        <div class="stat-sub">{{ stats.response }} responses total</div>
       </div>
+      <div class="stat-card" style="--card-accent:var(--blue)">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-label">Avg Score</div>
+        <div class="stat-value">{{ stats.avg_score }}</div>
+        <div class="stat-sub">Claude fit / 10</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--teal)">
+        <div class="stat-icon">💷</div>
+        <div class="stat-label">Avg Salary</div>
+        <div class="stat-value">{% if stats.avg_salary %}£{{ "{:,}".format(stats.avg_salary) }}{% else %}—{% endif %}</div>
+        <div class="stat-sub">where extracted</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--purple)">
+        <div class="stat-icon">📝</div>
+        <div class="stat-label">Cover Letters</div>
+        <div class="stat-value">{{ stats.cover }}</div>
+        <div class="stat-sub">written (versioned)</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--orange)">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-label">Follow-ups Due</div>
+        <div class="stat-value" style="color:{% if stats.followups_due > 0 %}var(--orange){% else %}var(--text){% endif %}">
+          {{ stats.followups_due }}
+        </div>
+        <div class="stat-sub">7+ days, no response</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--red)">
+        <div class="stat-icon">❌</div>
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value">{{ stats.rejected }}</div>
+        <div class="stat-sub">{{ stats.skipped }} skipped by agent</div>
+      </div>
+      {% if stats.by_source.get('LinkedIn', 0) > 0 %}
+      <div class="stat-card" style="--card-accent:#0077b5">
+        <div class="stat-icon">💼</div>
+        <div class="stat-label">From LinkedIn</div>
+        <div class="stat-value">{{ stats.by_source.LinkedIn }}</div>
+        <div class="stat-sub">scraped this cycle</div>
+      </div>
+      {% else %}
+      <div class="stat-card" style="--card-accent:#3f4467">
+        <div class="stat-icon">⏭</div>
+        <div class="stat-label">Skipped</div>
+        <div class="stat-value">{{ stats.skipped }}</div>
+        <div class="stat-sub">below threshold</div>
+      </div>
+      {% endif %}
+      <div class="stat-card" style="--card-accent:#2dd4bf">
+        <div class="stat-icon">💬</div>
+        <div class="stat-label">Response Rate</div>
+        <div class="stat-value">
+          {% if stats.applied > 0 %}
+            {{ "%.0f"|format((stats.response + stats.interview) / stats.applied * 100) }}%
+          {% else %}—{% endif %}
+        </div>
+        <div class="stat-sub">responses / applied</div>
+      </div>
+    </div>
 
-      <!-- ── JOB TABLE ── -->
-      <div class="table-section">
-        <div class="table-header">
-          <h2>All Jobs</h2>
+    <!-- ── CHARTS ──────────────────────────────────────────────────── -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Pipeline</h3>
+        <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Score Distribution</h3>
+        <div class="chart-wrap"><canvas id="scoreChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Source Breakdown</h3>
+        <div class="chart-wrap"><canvas id="sourceChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Market Alignment</h3>
+        <div class="chart-wrap"><canvas id="marketChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── FOLLOW-UP PANEL ─────────────────────────────────────────── -->
+    {% if followup_jobs %}
+    <div class="followup-panel" id="followupPanel">
+      <div class="followup-panel-header">
+        <h2>🔔 Follow-ups Due</h2>
+        <span>{{ followup_jobs | length }} application{{ 's' if followup_jobs|length > 1 else '' }} waiting for a chase email</span>
+      </div>
+      <div class="followup-items">
+        {% for job in followup_jobs %}
+        {% set days = ((today_date | default('')) and 7) or 7 %}
+        <div class="followup-item">
+          <div>
+            <div class="co">{{ job.get('Company', '—') }}</div>
+            <div class="role">{{ job.get('Role Title', '—') }}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Applied {{ job.get('Date Applied','—') }}</div>
+            {% if job.get('_followup_draft_subject') %}
+            <div class="followup-draft">Draft: {{ job['_followup_draft_subject'] }}</div>
+            {% else %}
+            <div class="followup-draft" style="color:var(--muted)">No draft yet — run followup.py</div>
+            {% endif %}
+          </div>
+          <span class="days-badge">Chase needed</span>
+          <form method="POST" action="/update_status" style="display:flex;gap:6px;align-items:center;">
+            <input type="hidden" name="url" value="{{ job.get('Source URL','') }}">
+            <input type="hidden" name="status" value="{{ '📬 Response Received' }}">
+            <button class="btn btn-ghost" type="submit" style="font-size:11px;padding:5px 10px;">
+              Mark Responded
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── JOB TABLE ───────────────────────────────────────────────── -->
+    <div class="table-section">
+      <div class="table-header">
+        <h2>All Jobs</h2>
+        <div class="table-header-right">
           <span class="table-count" id="tableCount">{{ jobs | length }} jobs</span>
         </div>
-
-        <div class="table-wrap">
-          {% if jobs %}
-          <table id="jobTable">
-            <thead>
-              <tr>
-                <th onclick="sortTable(0)">Company ↕</th>
-                <th onclick="sortTable(1)">Role ↕</th>
-                <th onclick="sortTable(2)">Score ↕</th>
-                <th>Method</th>
-                <th>Status</th>
-                <th>Reason</th>
-                <th>Date</th>
-                <th>Link</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="jobTableBody">
-              {% for job in jobs %}
-              <tr data-status="{{ job.get('Status', '') }}" data-search="{{ (job.get('Company','') + ' ' + job.get('Role Title','')).lower() }}">
-                <td class="company-cell">{{ job.get('Company', '—') }}</td>
-                <td class="role-cell">{{ job.get('Role Title', '—') }}</td>
-                <td>
-                  {% set s = job.get('Score', '') %}
-                  {% if s %}
-                    {% set sn = s | int %}
-                    {% if sn >= 8 %}
-                      <span class="score-badge" style="background:#052e16; color:#22c55e;">{{ sn }}</span>
-                    {% elif sn >= 6 %}
-                      <span class="score-badge" style="background:#1c1917; color:#f59e0b;">{{ sn }}</span>
-                    {% else %}
-                      <span class="score-badge" style="background:#1f1315; color:#f87171;">{{ sn }}</span>
-                    {% endif %}
-                  {% else %}
-                    <span style="color:var(--muted)">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% set m = job.get('Apply Method', 'unknown') or 'unknown' %}
-                  <span class="method-tag {{ m }}">{{ m }}</span>
-                </td>
-                <td>
-                  {% set st = job.get('Status', '⚪ Found') %}
-                  {% set meta = status_meta(st) %}
-                  <span class="status-pill" style="background:{{ meta.bg }}; color:{{ meta.color }}">
-                    {{ st }}
-                  </span>
-                </td>
-                <td class="reason-cell" data-tip="{{ job.get('Score Reason', '') }}">
-                  {{ job.get('Score Reason', '—') }}
-                </td>
-                <td style="color:var(--muted); white-space:nowrap; font-size:12px;">
-                  {{ job.get('Date Found', '—') }}
-                </td>
-                <td>
-                  {% if job.get('Source URL') %}
-                    <a class="url-link" href="{{ job['Source URL'] }}" target="_blank" rel="noopener">Open ↗</a>
-                  {% else %}
-                    <span style="color:var(--muted)">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <form method="POST" action="/update_status" style="display:flex;gap:6px;align-items:center;">
-                    <input type="hidden" name="url" value="{{ job.get('Source URL', '') }}">
-                    <select class="action-select" name="status">
-                      {% for s in all_statuses %}
-                        <option value="{{ s }}" {% if s == job.get('Status') %}selected{% endif %}>{{ s }}</option>
-                      {% endfor %}
-                    </select>
-                    <button class="update-btn" type="submit">Save</button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          {% else %}
-          <div class="empty-state">
-            <div class="icon">🔍</div>
-            <p>No jobs tracked yet.</p>
-            <p style="font-size:12px; margin-top:6px;">Run <code>python main.py --dry-run</code> to start.</p>
-          </div>
-          {% endif %}
-        </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
+      <!-- Method filter chips -->
+      <div class="filter-row">
+        <span style="font-size:10px;color:var(--muted);align-self:center;margin-right:4px">Method:</span>
+        <span class="chip active" data-method="all" onclick="filterMethod('all',this)">All</span>
+        {% for m, cnt in stats.by_method.items() %}
+        <span class="chip" data-method="{{ m }}" onclick="filterMethod('{{ m }}',this)">{{ m }} ({{ cnt }})</span>
+        {% endfor %}
+      </div>
 
+      <div class="table-wrap">
+        {% if jobs %}
+        <table id="jobTable">
+          <thead>
+            <tr>
+              <th style="width:28px"></th>
+              <th onclick="sortTable(1)">Company <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable(2)">Role <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable(3)">Score <span class="sort-icon">↕</span></th>
+              <th>Salary</th>
+              <th>Market</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Cover</th>
+              <th onclick="sortTable(8)">Date <span class="sort-icon">↕</span></th>
+              <th>Link</th>
+              <th>Update</th>
+            </tr>
+          </thead>
+          <tbody id="jobTableBody">
+            {% for job in jobs %}
+            {% set meta   = job._meta %}
+            {% set mkt    = market_meta(job._market) %}
+            {% set row_id = loop.index %}
+            <tr
+              class="{% if job._followup_due %}followup-row{% endif %}"
+              data-status="{{ job.get('Status','') }}"
+              data-source="{{ job._source }}"
+              data-method="{{ job.get('Apply Method','unknown') or 'unknown' }}"
+              data-search="{{ (job.get('Company','') + ' ' + job.get('Role Title','') + ' ' + job._source).lower() }}"
+              data-row="{{ row_id }}"
+            >
+              <!-- Expand toggle -->
+              <td>
+                <button class="expand-btn" onclick="toggleDetail({{ row_id }}, this)" title="Show details">›</button>
+              </td>
+
+              <!-- Company + source -->
+              <td class="c-company">
+                {{ job.get('Company','—') }}
+                <small>{{ job._source }}</small>
+              </td>
+
+              <!-- Role -->
+              <td class="c-role" data-tip="{{ job.get('Score Reason','') }}">
+                {{ job.get('Role Title','—') }}
+              </td>
+
+              <!-- Score -->
+              <td>
+                {% set s = job.get('Score','') %}
+                {% if s %}
+                  {% set sn = s | int %}
+                  {% if sn >= 8 %}
+                    <span class="score-badge" style="background:#052e16;color:#34d399;">{{ sn }}</span>
+                  {% elif sn >= config_score_threshold | default(7) %}
+                    <span class="score-badge" style="background:#1c1408;color:#fbbf24;">{{ sn }}</span>
+                  {% else %}
+                    <span class="score-badge" style="background:#1f0e0e;color:#f87171;">{{ sn }}</span>
+                  {% endif %}
+                {% else %}
+                  <span style="color:var(--muted)">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Salary -->
+              <td class="salary-cell">
+                {% if job._salary_min and job._salary_max %}
+                  <span class="salary-val">£{{ "{:,}".format(job._salary_min) }}–{{ "{:,}".format(job._salary_max) }}</span>
+                {% elif job._salary_max %}
+                  <span class="salary-val">up to £{{ "{:,}".format(job._salary_max) }}</span>
+                {% else %}
+                  <span class="salary-na">unknown</span>
+                {% endif %}
+              </td>
+
+              <!-- Market alignment -->
+              <td>
+                <span class="market-pill" style="background:{{ mkt.bg }};color:{{ mkt.color }};border-color:{{ mkt.color }}33;">
+                  {{ mkt.label }}
+                </span>
+              </td>
+
+              <!-- Apply method -->
+              <td>
+                {% set m = (job.get('Apply Method','unknown') or 'unknown').strip() %}
+                <span class="method-tag {{ m }}">{{ m }}</span>
+              </td>
+
+              <!-- Status -->
+              <td>
+                <span class="status-pill" style="background:{{ meta.bg }};color:{{ meta.color }};">
+                  {{ job.get('Status','—') }}
+                </span>
+                {% if job._followup_due %}
+                  <span class="fu-chip" style="margin-left:5px;">🔔 chase</span>
+                {% endif %}
+              </td>
+
+              <!-- Cover letter versions -->
+              <td>
+                {% if job._cl_count > 0 %}
+                  <span class="cl-badge">📄 v{{ job._cl_count }}</span>
+                {% else %}
+                  <span style="color:var(--muted)">—</span>
+                {% endif %}
+              </td>
+
+              <!-- Date -->
+              <td style="color:var(--muted);white-space:nowrap;font-size:11px;">
+                {{ job.get('Date Found','—') }}
+              </td>
+
+              <!-- Link -->
+              <td>
+                {% if job.get('Source URL') %}
+                  <a class="url-link" href="{{ job['Source URL'] }}" target="_blank" rel="noopener">Open ↗</a>
+                {% else %}—{% endif %}
+              </td>
+
+              <!-- Status update -->
+              <td>
+                <form method="POST" action="/update_status" style="display:flex;gap:5px;align-items:center;">
+                  <input type="hidden" name="url" value="{{ job.get('Source URL','') }}">
+                  <select class="action-select" name="status">
+                    {% for s in all_statuses %}
+                      <option value="{{ s }}" {% if s == job.get('Status') %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="save-btn" type="submit">Save</button>
+                </form>
+              </td>
+            </tr>
+
+            <!-- Detail drawer row -->
+            <tr class="detail-row hidden" id="detail-{{ row_id }}">
+              <td colspan="12">
+                <div class="detail-inner">
+                  <div class="detail-block">
+                    <h4>Score Reason</h4>
+                    <p>{{ job.get('Score Reason','No reason recorded.') }}</p>
+
+                    <h4 style="margin-top:14px">Job Description Preview</h4>
+                    <pre>{{ job.get('Notes','')[:600] or 'No description stored in Notes.' }}</pre>
+                  </div>
+                  <div class="detail-block">
+                    <h4>Cover Letter Versions</h4>
+                    {% if job._cl_versions %}
+                    <div class="cl-versions">
+                      {% for path in job._cl_versions %}
+                      <span class="cl-version-link">📄 v{{ loop.index }} — {{ path.split('/')[-1] }}</span>
+                      {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color:var(--muted)">No cover letters yet.</p>
+                    {% endif %}
+
+                    <h4 style="margin-top:14px">Follow-up Draft</h4>
+                    <p>{% if job._followup_draft_subject %}{{ job._followup_draft_subject }}{% else %}<span style="color:var(--muted)">Not drafted yet.</span>{% endif %}</p>
+
+                    <h4 style="margin-top:14px">Contact</h4>
+                    <p>{{ job.get('Contact Email','—') }}</p>
+
+                    <h4 style="margin-top:14px">Response</h4>
+                    <p>{{ job.get('Response','—') or '—' }}</p>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <div class="icon">🔍</div>
+          <p style="font-size:15px;font-weight:700;margin-bottom:6px">No jobs tracked yet</p>
+          <p>Run <code>python main.py --dry-run</code> to start the pipeline.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
 </div><!-- /shell -->
 
-<!-- ── CHARTS JS ── -->
+<!-- ══════════════════════════════ JS ══════════════════════════════ -->
 <script>
-const CHART_DEFAULTS = {
-  plugins: { legend: { display: false } },
-  responsive: true,
-  maintainAspectRatio: false,
+// ── Chart defaults ────────────────────────────────────────────────
+const GRID = { color: 'rgba(255,255,255,0.04)' };
+const TICK = { color: '#5a6585', font: { size: 10 } };
+const LEGEND = {
+  display: true, position: 'right',
+  labels: { color: '#5a6585', font: { size: 10 }, boxWidth: 9, padding: 7 }
 };
-const GRID = { color: 'rgba(255,255,255,0.05)' };
-const TICK = { color: '#7b82a8', font: { size: 11 } };
 
-// ── Status donut
-const statusData = {{ stats.status_counts | tojson }};
+// ── Pipeline donut ────────────────────────────────────────────────
+const statusData   = {{ stats.status_counts | tojson }};
 const statusLabels = Object.keys(statusData);
-const statusValues = Object.values(statusData);
+const statusVals   = Object.values(statusData);
 const statusColors = statusLabels.map(l => {
-  if (l.includes('⭐')) return '#f59e0b';
-  if (l.includes('🟢')) return '#22c55e';
-  if (l.includes('📬')) return '#3b82f6';
-  if (l.includes('🟠')) return '#f97316';
-  if (l.includes('🟡')) return '#eab308';
-  if (l.includes('🔵')) return '#4f7cff';
-  if (l.includes('❌')) return '#ef4444';
-  if (l.includes('⏭')) return '#4b5563';
-  return '#6b7280';
+  if (l.includes('⭐')) return '#facc15';
+  if (l.includes('🟢')) return '#34d399';
+  if (l.includes('📬')) return '#818cf8';
+  if (l.includes('🟠')) return '#fb923c';
+  if (l.includes('🟡')) return '#fbbf24';
+  if (l.includes('🔵')) return '#60a5fa';
+  if (l.includes('❌')) return '#f87171';
+  if (l.includes('⏭')) return '#374151';
+  return '#4b5563';
 });
-
 new Chart(document.getElementById('statusChart'), {
   type: 'doughnut',
-  data: {
-    labels: statusLabels,
-    datasets: [{ data: statusValues, backgroundColor: statusColors, borderWidth: 2, borderColor: '#1a1d27' }]
-  },
-  options: {
-    ...CHART_DEFAULTS,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'right',
-        labels: { color: '#7b82a8', font: { size: 10 }, boxWidth: 10, padding: 6 }
-      }
-    },
-    cutout: '65%',
-  }
+  data: { labels: statusLabels, datasets: [{ data: statusVals, backgroundColor: statusColors, borderWidth: 2, borderColor: '#13161f' }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEGEND }, cutout: '62%' }
 });
 
-// ── Score bar chart
-const scoreDist = {{ stats.score_dist | tojson }};
-const scoreLabels = Object.keys(scoreDist);
-const scoreValues = Object.values(scoreDist);
-const scoreColors = scoreLabels.map(n => {
-  const v = parseInt(n);
-  if (v >= 8) return '#22c55e';
-  if (v >= 6) return '#f59e0b';
-  return '#ef4444';
-});
-
+// ── Score bar ─────────────────────────────────────────────────────
+const scoreDist  = {{ stats.score_dist | tojson }};
+const scoreThres = {{ score_threshold }};
 new Chart(document.getElementById('scoreChart'), {
   type: 'bar',
   data: {
-    labels: scoreLabels,
+    labels: Object.keys(scoreDist),
     datasets: [{
-      data: scoreValues,
-      backgroundColor: scoreColors,
-      borderRadius: 4,
-      borderSkipped: false,
+      data: Object.values(scoreDist),
+      backgroundColor: Object.keys(scoreDist).map(n => parseInt(n) >= 8 ? '#34d399' : parseInt(n) >= scoreThres ? '#fbbf24' : '#f87171'),
+      borderRadius: 5, borderSkipped: false,
     }]
   },
   options: {
-    ...CHART_DEFAULTS,
-    scales: {
-      x: { grid: GRID, ticks: TICK },
-      y: { grid: GRID, ticks: { ...TICK, stepSize: 1 }, beginAtZero: true }
-    }
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: GRID, ticks: TICK }, y: { grid: GRID, ticks: { ...TICK, stepSize: 1 }, beginAtZero: true } }
   }
 });
 
-// ── Source donut
-const sourceData = {{ stats.by_source | tojson }};
-const sourceLabels = Object.keys(sourceData);
-const sourceValues = Object.values(sourceData);
-const sourceColors = ['#4f7cff','#7c4fff','#22c55e','#f97316','#f59e0b','#ef4444','#3b82f6','#a855f7'];
-
+// ── Source donut ──────────────────────────────────────────────────
+const srcData   = {{ stats.by_source | tojson }};
+const srcColors = ['#4f7cff','#0077b5','#34d399','#fb923c','#fbbf24','#f87171','#a78bfa','#2dd4bf'];
 new Chart(document.getElementById('sourceChart'), {
   type: 'doughnut',
-  data: {
-    labels: sourceLabels,
-    datasets: [{ data: sourceValues, backgroundColor: sourceColors.slice(0, sourceLabels.length), borderWidth: 2, borderColor: '#1a1d27' }]
-  },
-  options: {
-    ...CHART_DEFAULTS,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'right',
-        labels: { color: '#7b82a8', font: { size: 10 }, boxWidth: 10, padding: 6 }
-      }
-    },
-    cutout: '65%',
-  }
+  data: { labels: Object.keys(srcData), datasets: [{ data: Object.values(srcData), backgroundColor: srcColors.slice(0, Object.keys(srcData).length), borderWidth: 2, borderColor: '#13161f' }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEGEND }, cutout: '62%' }
 });
 
-// ── Filter by status (sidebar)
-let activeFilter = 'all';
-let activeSearch = '';
+// ── Market alignment donut ────────────────────────────────────────
+const mktRaw  = {{ stats.by_market | tojson }};
+const mktMap  = { above_target: ['Above target','#34d399'], within_target: ['Within target','#60a5fa'], below_target: ['Below target','#f87171'], unknown: ['Unknown','#374151'] };
+const mktLabels = Object.keys(mktRaw).map(k => mktMap[k]?.[0] || k);
+const mktColors = Object.keys(mktRaw).map(k => mktMap[k]?.[1] || '#4b5563');
+new Chart(document.getElementById('marketChart'), {
+  type: 'doughnut',
+  data: { labels: mktLabels, datasets: [{ data: Object.values(mktRaw), backgroundColor: mktColors, borderWidth: 2, borderColor: '#13161f' }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: LEGEND }, cutout: '62%' }
+});
 
-function filterStatus(emoji, btn) {
-  activeFilter = emoji;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+// ── Filters ───────────────────────────────────────────────────────
+let fStatus = 'all', fSource = 'all', fMethod = 'all', fSearch = '';
+
+function filterStatus(v, btn) {
+  fStatus = v;
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   applyFilters();
 }
-
-function filterSearch(val) {
-  activeSearch = val.toLowerCase();
+function filterSource(v, chip) {
+  fSource = fSource === v ? 'all' : v;
+  document.querySelectorAll('[data-source-chip]').forEach(c => c.classList.remove('active'));
+  if (fSource !== 'all') chip.classList.add('active');
   applyFilters();
 }
+function filterMethod(v, chip) {
+  fMethod = v;
+  document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  applyFilters();
+}
+function filterSearch(v) { fSearch = v.toLowerCase(); applyFilters(); }
 
 function applyFilters() {
-  const rows = document.querySelectorAll('#jobTableBody tr');
+  const rows = document.querySelectorAll('#jobTableBody tr[data-row]');
   let visible = 0;
   rows.forEach(row => {
-    const status = row.dataset.status || '';
-    const search = row.dataset.search || '';
-    const statusMatch = activeFilter === 'all' || status.includes(activeFilter);
-    const searchMatch = !activeSearch || search.includes(activeSearch);
-    if (statusMatch && searchMatch) {
+    const rowId   = row.dataset.row;
+    const detail  = document.getElementById('detail-' + rowId);
+    const ok = (fStatus === 'all' || (row.dataset.status || '').includes(fStatus))
+            && (fSource === 'all' || (row.dataset.source || '') === fSource)
+            && (fMethod === 'all' || (row.dataset.method || '') === fMethod)
+            && (!fSearch || (row.dataset.search || '').includes(fSearch));
+    if (ok) {
       row.classList.remove('hidden');
       visible++;
     } else {
       row.classList.add('hidden');
+      if (detail) { detail.classList.add('hidden'); }
     }
   });
-  document.getElementById('tableCount').textContent = visible + ' jobs';
+  document.getElementById('tableCount').textContent = visible + ' job' + (visible !== 1 ? 's' : '');
 }
 
-// ── Sort table
-let sortDir = {};
+// ── Row expand / collapse ─────────────────────────────────────────
+function toggleDetail(rowId, btn) {
+  const detail = document.getElementById('detail-' + rowId);
+  if (!detail) return;
+  const isOpen = !detail.classList.contains('hidden');
+  detail.classList.toggle('hidden', isOpen);
+  btn.classList.toggle('open', !isOpen);
+}
+
+// ── Sort table ────────────────────────────────────────────────────
+const sortDir = {};
 function sortTable(col) {
   const tbody = document.getElementById('jobTableBody');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
+  // Only sort non-detail rows
+  const dataRows = Array.from(tbody.querySelectorAll('tr[data-row]'));
   const dir = sortDir[col] = -(sortDir[col] || 1);
-  rows.sort((a, b) => {
-    const aVal = a.cells[col]?.textContent.trim() || '';
-    const bVal = b.cells[col]?.textContent.trim() || '';
-    const aNum = parseFloat(aVal);
-    const bNum = parseFloat(bVal);
-    if (!isNaN(aNum) && !isNaN(bNum)) return dir * (aNum - bNum);
-    return dir * aVal.localeCompare(bVal);
+  dataRows.sort((a, b) => {
+    const av = a.cells[col]?.textContent.trim() || '';
+    const bv = b.cells[col]?.textContent.trim() || '';
+    const an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return dir * (an - bn);
+    return dir * av.localeCompare(bv);
   });
-  rows.forEach(r => tbody.appendChild(r));
+  // Re-insert each data row followed by its detail row
+  dataRows.forEach(row => {
+    const rowId = row.dataset.row;
+    const detail = document.getElementById('detail-' + rowId);
+    tbody.appendChild(row);
+    if (detail) tbody.appendChild(detail);
+  });
 }
 
-// ── Auto-refresh every 5 minutes
+// ── Auto-refresh every 5 min ──────────────────────────────────────
 setTimeout(() => window.location.reload(), 5 * 60 * 1000);
 </script>
-
 </body>
 </html>
