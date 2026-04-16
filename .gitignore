@@ -2,6 +2,9 @@
 .env
 credentials.json
 
+# LinkedIn persistent session (contains auth cookies)
+data/.linkedin_session/
+
 # Output directories (keep .gitkeep placeholders)
 output/cover_letters/*.txt
 output/screenshots/*.png

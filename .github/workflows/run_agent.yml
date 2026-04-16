@@ -11,9 +11,19 @@ on:
         required: false
         default: 'false'
         type: choice
-        options:
-          - 'false'
-          - 'true'
+        options: ['false', 'true']
+      use_linkedin:
+        description: 'Enable LinkedIn scraping?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      skip_search:
+        description: 'Skip search, only process existing sheet jobs?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 jobs:
   run-agent:
@@ -37,18 +47,17 @@ jobs:
         run: playwright install chromium --with-deps
 
       - name: Decode Google service account credentials
-        run: |
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" | base64 --decode > credentials.json
+        run: echo "$GOOGLE_CREDENTIALS_JSON" | base64 --decode > credentials.json
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
 
       - name: Run job agent
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            python main.py --dry-run
-          else
-            python main.py
-          fi
+          ARGS=""
+          [ "${{ github.event.inputs.dry_run }}"     = "true" ] && ARGS="$ARGS --dry-run"
+          [ "${{ github.event.inputs.use_linkedin }}" = "true" ] && ARGS="$ARGS --linkedin"
+          [ "${{ github.event.inputs.skip_search }}"  = "true" ] && ARGS="$ARGS --skip-search"
+          python main.py $ARGS
         env:
           ANTHROPIC_API_KEY:        ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY:           ${{ secrets.GOOGLE_API_KEY }}
@@ -57,22 +66,38 @@ jobs:
           GMAIL_USER:               ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD:       ${{ secrets.GMAIL_APP_PASSWORD }}
           MY_EMAIL:                 ${{ secrets.MY_EMAIL }}
+          LINKEDIN_EMAIL:           ${{ secrets.LINKEDIN_EMAIL }}
+          LINKEDIN_PASSWORD:        ${{ secrets.LINKEDIN_PASSWORD }}
           CI:                       "true"
 
-      - name: Upload screenshots artifact
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: job-agent-screenshots-${{ github.run_number }}
+          name: screenshots-${{ github.run_number }}
           path: output/screenshots/
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Upload cover letters artifact
+      - name: Upload cover letters
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: job-agent-cover-letters-${{ github.run_number }}
+          name: cover-letters-${{ github.run_number }}
           path: output/cover_letters/
           if-no-files-found: ignore
           retention-days: 30
+
+      - name: Save run summary to logs branch
+        if: always()
+        run: |
+          git config user.name  "job-agent[bot]"
+          git config user.email "job-agent@users.noreply.github.com"
+          mkdir -p logs
+          echo "{\"run\": ${{ github.run_number }}, \"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > logs/run_${{ github.run_number }}.json
+          git fetch origin logs 2>/dev/null || git checkout --orphan logs
+          git checkout logs 2>/dev/null || true
+          git add logs/
+          git diff --cached --quiet || git commit -m "Run summary #${{ github.run_number }}"
+          git push origin logs
+        continue-on-error: true
