@@ -164,10 +164,15 @@ def _contains_no_apply_keyword(job: dict) -> bool:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def search_jobs(existing_urls: set[str]) -> list[dict]:
+def search_jobs(existing_urls: set[str], roles: list[str] | None = None) -> list[dict]:
     """
     Search Google for new job listings, deduplicate against *existing_urls*
     (supports both raw and normalised URLs), enrich with full JD text.
+
+    Args:
+        existing_urls: Set of URLs already in the tracker sheet.
+        roles: Optional list of job titles to search for; falls back to
+               config.TARGET_ROLES when not provided.
 
     Returns list of new job dicts.
     """
@@ -178,10 +183,13 @@ def search_jobs(existing_urls: set[str]) -> list[dict]:
         logger.error("GOOGLE_API_KEY or GOOGLE_CSE_ID not set.")
         return []
 
+    active_roles = roles if roles else config.TARGET_ROLES
+    logger.info("Searching for %d role(s): %s", len(active_roles), active_roles)
+
     # Build normalised set for deduplication
     norm_existing = {normalise_url(u) for u in existing_urls if u}
 
-    queries = _build_queries(config.TARGET_ROLES, config.TARGET_LOCATIONS)
+    queries = _build_queries(active_roles, config.TARGET_LOCATIONS)
     seen_norm: set[str] = set(norm_existing)
     new_jobs: list[dict] = []
 

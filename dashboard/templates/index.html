@@ -278,6 +278,7 @@ tbody tr.followup-row td:first-child { border-left: 2px solid var(--orange); }
 tbody tr.expanded { background: var(--surface2); }
 tbody tr.detail-row td { background: var(--surface3); padding: 0; }
 tbody tr.detail-row.hidden, tr.hidden { display: none; }
+.hidden { display: none !important; }
 tbody tr:last-child { border-bottom: none; }
 
 td { padding: 9px 14px; vertical-align: middle; }
@@ -410,6 +411,116 @@ td { padding: 9px 14px; vertical-align: middle; }
 }
 .divider { border: none; border-top: 1px solid var(--border); }
 
+/* ── Run-Agent panel ─────────────────────────────────────────────────── */
+.run-panel {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 26px;
+}
+.run-panel-inner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.run-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .9px; color: var(--muted); white-space: nowrap;
+}
+.tag-input-wrap {
+  flex: 1; min-width: 260px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+  padding: 5px 8px; cursor: text;
+  transition: border-color .15s;
+}
+.tag-input-wrap:focus-within { border-color: var(--accent); }
+.role-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 2px 9px 2px 10px;
+  font-size: 11px; color: var(--text); white-space: nowrap;
+}
+.role-tag button {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 13px; line-height: 1;
+  padding: 0 0 0 2px; transition: color .1s;
+}
+.role-tag button:hover { color: var(--red); }
+.tag-text-input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-size: 12px; min-width: 160px; flex: 1;
+}
+.tag-text-input::placeholder { color: var(--muted); }
+.run-opts { display: flex; align-items: center; gap: 14px; }
+.run-opts label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+}
+.run-opts input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.btn-run {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff; border: none; border-radius: var(--r-sm);
+  padding: 8px 18px; font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: opacity .15s, transform .1s; white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(79,124,255,.3);
+}
+.btn-run:hover { opacity: .88; }
+.btn-run:active { transform: scale(.97); }
+.btn-run:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-stop {
+  background: #2d0f0f; border: 1px solid #7c1f1f; color: var(--red);
+  border-radius: var(--r-sm); padding: 7px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.btn-stop:hover { background: #3d1515; }
+.run-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+  transition: background .3s;
+}
+.run-status-dot.running {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(52,211,153,.25);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+.run-status-dot.done-ok  { background: var(--green); }
+.run-status-dot.done-err { background: var(--red); }
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(52,211,153,.08); }
+}
+.run-status-txt {
+  font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+
+/* ── Log terminal ───────────────────────────────────────────────────── */
+.log-panel {
+  margin-top: 10px;
+  background: #080a10; border: 1px solid var(--border);
+  border-radius: var(--r-sm); overflow: hidden;
+  max-height: 320px; display: none;
+}
+.log-panel.visible { display: block; }
+.log-panel-header {
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  padding: 6px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted);
+}
+.log-body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px; line-height: 1.6;
+  padding: 10px 14px;
+  overflow-y: auto; max-height: 280px;
+  color: #9aefb8; white-space: pre-wrap; word-break: break-all;
+}
+.log-body .log-err  { color: var(--red); }
+.log-body .log-warn { color: var(--yellow); }
+.log-body .log-info { color: #9aefb8; }
+.log-body .log-sep  { color: var(--muted); }
+
 /* ── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 1400px) { .stats-grid { grid-template-columns: repeat(5,1fr); } }
 @media (max-width: 1200px) { .charts-row { grid-template-columns: 1fr 1fr; } }
@@ -525,6 +636,51 @@ td { padding: 9px 14px; vertical-align: middle; }
     <a onclick="document.getElementById('followupPanel').scrollIntoView({behavior:'smooth'})">review below ↓</a></span>
   </div>
   {% endif %}
+
+  <!-- ── RUN AGENT PANEL ──────────────────────────────────────────── -->
+  <div class="run-panel" id="runPanel">
+    <div class="run-panel-inner">
+      <span class="run-label">🔍 Run Agent</span>
+
+      <!-- Tag input -->
+      <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInput').focus()">
+        <!-- Tags injected by JS from defaultRoles -->
+        <input class="tag-text-input" id="tagInput"
+               placeholder="Add a job title then press Enter…"
+               onkeydown="handleTagKey(event)"
+               autocomplete="off">
+      </div>
+
+      <!-- Options -->
+      <div class="run-opts">
+        <label><input type="checkbox" id="optDryRun"> Dry run</label>
+        <label><input type="checkbox" id="optLinkedin"> LinkedIn</label>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn-run" id="btnRun" onclick="startRun()">
+        <span id="btnRunIcon">▶</span>
+        <span id="btnRunLabel">Search &amp; Apply</span>
+      </button>
+      <button class="btn-stop hidden" id="btnStop" onclick="stopRun()">■ Stop</button>
+
+      <!-- Status indicator -->
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="run-status-dot" id="statusDot"></div>
+        <span class="run-status-txt" id="statusTxt">Idle</span>
+      </div>
+    </div>
+
+    <!-- Live log terminal -->
+    <div class="log-panel" id="logPanel">
+      <div class="log-panel-header">
+        <span>Agent Log</span>
+        <button class="btn-ghost btn" style="padding:2px 8px;font-size:10px"
+                onclick="document.getElementById('logPanel').classList.remove('visible')">✕</button>
+      </div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+  </div>
 
   <div class="content">
 
@@ -1017,6 +1173,171 @@ function sortTable(col) {
 
 // ── Auto-refresh every 5 min ──────────────────────────────────────
 setTimeout(() => window.location.reload(), 5 * 60 * 1000);
+
+// ══════════════════════════════════════════════════════════════════
+//  RUN AGENT — Tag input + subprocess management
+// ══════════════════════════════════════════════════════════════════
+
+// Default roles pre-loaded from Flask config
+const defaultRoles = {{ target_roles | tojson }};
+
+// Current tag list (mutable)
+let roleTags = [...defaultRoles];
+
+// Render tags into #tagWrap
+function renderTags() {
+  const wrap  = document.getElementById('tagWrap');
+  const input = document.getElementById('tagInput');
+  // Remove all existing tag elements (not the input itself)
+  wrap.querySelectorAll('.role-tag').forEach(el => el.remove());
+  roleTags.forEach((tag, i) => {
+    const el = document.createElement('div');
+    el.className = 'role-tag';
+    el.innerHTML = `<span>${tag}</span><button type="button" onclick="removeTag(${i})" title="Remove">×</button>`;
+    wrap.insertBefore(el, input);
+  });
+}
+
+function removeTag(i) {
+  roleTags.splice(i, 1);
+  renderTags();
+}
+
+function handleTagKey(e) {
+  const input = e.target;
+  const val   = input.value.trim();
+  if ((e.key === 'Enter' || e.key === ',') && val) {
+    e.preventDefault();
+    if (!roleTags.includes(val)) roleTags.push(val);
+    input.value = '';
+    renderTags();
+  } else if (e.key === 'Backspace' && input.value === '' && roleTags.length) {
+    roleTags.pop();
+    renderTags();
+  }
+}
+
+// Init tags on load
+renderTags();
+
+// ── Run lifecycle ─────────────────────────────────────────────────
+
+let _pollTimer = null;
+
+function _setRunningUI(running) {
+  const dot   = document.getElementById('statusDot');
+  const txt   = document.getElementById('statusTxt');
+  const btnR  = document.getElementById('btnRun');
+  const btnS  = document.getElementById('btnStop');
+  const icon  = document.getElementById('btnRunIcon');
+  const label = document.getElementById('btnRunLabel');
+
+  if (running) {
+    dot.className   = 'run-status-dot running';
+    txt.textContent = 'Running…';
+    btnR.disabled   = true;
+    icon.textContent = '⏳';
+    label.textContent = 'Running…';
+    btnS.classList.remove('hidden');
+  } else {
+    dot.className   = 'run-status-dot';
+    btnR.disabled   = false;
+    icon.textContent = '▶';
+    label.textContent = 'Search & Apply';
+    btnS.classList.add('hidden');
+  }
+}
+
+function _colorLine(line) {
+  if (/ERROR|FAILED|error|failed/i.test(line)) return `<span class="log-err">${_esc(line)}</span>`;
+  if (/WARNING|warn/i.test(line))              return `<span class="log-warn">${_esc(line)}</span>`;
+  if (/^─+/.test(line))                        return `<span class="log-sep">${_esc(line)}</span>`;
+  return `<span class="log-info">${_esc(line)}</span>`;
+}
+
+function _esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let _lastLog = '';
+
+function _pollStatus() {
+  fetch('/api/run/status')
+    .then(r => r.json())
+    .then(data => {
+      const body = document.getElementById('logBody');
+      if (data.log && data.log !== _lastLog) {
+        _lastLog = data.log;
+        const lines = data.log.split('\n');
+        body.innerHTML = lines.map(_colorLine).join('\n');
+        body.scrollTop = body.scrollHeight;
+      }
+
+      if (!data.running) {
+        clearInterval(_pollTimer);
+        _pollTimer = null;
+        const dot = document.getElementById('statusDot');
+        const txt = document.getElementById('statusTxt');
+        if (data.exit_code === 0) {
+          dot.className   = 'run-status-dot done-ok';
+          txt.textContent = 'Completed ✓';
+        } else if (data.exit_code !== null) {
+          dot.className   = 'run-status-dot done-err';
+          txt.textContent = `Exited (${data.exit_code})`;
+        } else {
+          dot.className   = 'run-status-dot';
+          txt.textContent = 'Idle';
+        }
+        _setRunningUI(false);
+      }
+    })
+    .catch(() => {});
+}
+
+function startRun() {
+  if (roleTags.length === 0) {
+    alert('Add at least one job title first.');
+    return;
+  }
+  const dry_run  = document.getElementById('optDryRun').checked;
+  const linkedin = document.getElementById('optLinkedin').checked;
+
+  fetch('/api/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roles: roleTags, dry_run, linkedin }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { alert('Error: ' + data.error); return; }
+    _lastLog = '';
+    document.getElementById('logBody').innerHTML = '';
+    document.getElementById('logPanel').classList.add('visible');
+    _setRunningUI(true);
+    document.getElementById('statusTxt').textContent = 'Starting…';
+    _pollTimer = setInterval(_pollStatus, 1500);
+  })
+  .catch(err => alert('Failed to start: ' + err));
+}
+
+function stopRun() {
+  fetch('/api/run/stop', { method: 'POST' })
+    .then(() => {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+      _setRunningUI(false);
+      document.getElementById('statusTxt').textContent = 'Stopped';
+    });
+}
+
+// If already running when page loads, auto-attach poll
+fetch('/api/run/status').then(r => r.json()).then(data => {
+  if (data.running) {
+    _setRunningUI(true);
+    document.getElementById('logPanel').classList.add('visible');
+    _pollTimer = setInterval(_pollStatus, 1500);
+  }
+}).catch(() => {});
 </script>
 </body>
 </html>

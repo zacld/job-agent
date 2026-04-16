@@ -68,9 +68,16 @@ def load_cv() -> dict:
 # Pipeline
 # ---------------------------------------------------------------------------
 
-def run(dry_run: bool = False, skip_search: bool = False, use_linkedin: bool = False) -> None:
+def run(
+    dry_run: bool = False,
+    skip_search: bool = False,
+    use_linkedin: bool = False,
+    roles: list[str] | None = None,
+) -> None:
     logger.info("=" * 64)
     logger.info("Job Agent — dry_run=%s | linkedin=%s", dry_run, use_linkedin)
+    if roles:
+        logger.info("Custom roles: %s", roles)
     logger.info("=" * 64)
 
     cv = load_cv()
@@ -92,7 +99,7 @@ def run(dry_run: bool = False, skip_search: bool = False, use_linkedin: bool = F
 
     if not skip_search:
         # Google Custom Search
-        google_jobs = search_jobs(existing_urls)
+        google_jobs = search_jobs(existing_urls, roles=roles)
         new_jobs.extend(google_jobs)
 
         # LinkedIn (optional)
@@ -245,8 +252,19 @@ def main():
         "--linkedin", action="store_true",
         help="Enable LinkedIn scraping (overrides USE_LINKEDIN env var).",
     )
+    parser.add_argument(
+        "--roles",
+        help="Comma-separated job titles to search for (overrides config.TARGET_ROLES).",
+        default="",
+    )
     args = parser.parse_args()
-    run(dry_run=args.dry_run, skip_search=args.skip_search, use_linkedin=args.linkedin)
+    custom_roles = [r.strip() for r in args.roles.split(",") if r.strip()] if args.roles else None
+    run(
+        dry_run=args.dry_run,
+        skip_search=args.skip_search,
+        use_linkedin=args.linkedin,
+        roles=custom_roles,
+    )
 
 
 if __name__ == "__main__":

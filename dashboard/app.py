@@ -14,15 +14,51 @@ v2 — updated for Tier 1/2 pipeline features:
 import json
 import logging
 import re
+import subprocess
 import sys
 import pathlib
+import threading
 from datetime import date, timedelta
+from collections import deque
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for
 import config
 from agent.sheets import get_sheet, get_existing_urls, update_status, STATUS
+
+# ---------------------------------------------------------------------------
+# Agent subprocess state (module-level singleton)
+# ---------------------------------------------------------------------------
+
+_AGENT_ROOT = pathlib.Path(__file__).parent.parent
+_MAX_LOG_LINES = 600
+
+_run_lock  = threading.Lock()
+_run_state: dict = {
+    "process":   None,       # Popen object while running
+    "running":   False,
+    "exit_code": None,       # int after completion, None while running
+    "log":       deque(maxlen=_MAX_LOG_LINES),  # rolling buffer
+    "roles":     [],         # roles used in last/current run
+    "dry_run":   False,
+}
+
+
+def _stream_output(proc: subprocess.Popen) -> None:
+    """Background thread: pipe process stdout→log buffer, then mark done."""
+    for raw_line in iter(proc.stdout.readline, ""):
+        line = raw_line.rstrip()
+        with _run_lock:
+            _run_state["log"].append(line)
+    proc.wait()
+    with _run_lock:
+        _run_state["running"]   = False
+        _run_state["exit_code"] = proc.returncode
+        _run_state["process"]   = None
+        _run_state["log"].append(
+            f"── Agent exited with code {proc.returncode} ──"
+        )
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -333,6 +369,7 @@ def index():
         sheet_name=config.SHEET_NAME,
         salary_min=config.SALARY_MIN,
         score_threshold=config.SCORE_THRESHOLD,
+        target_roles=config.TARGET_ROLES,
     )
 
 
@@ -357,6 +394,79 @@ def api_job_detail():
         if j.get("Source URL") == url:
             return jsonify(_enrich_job(j))
     return jsonify({"error": "not found"}), 404
+
+
+@app.route("/api/run", methods=["POST"])
+def api_run():
+    """Start the job-agent pipeline in a background subprocess."""
+    with _run_lock:
+        if _run_state["running"]:
+            return jsonify({"error": "Agent already running"}), 409
+
+    data     = request.get_json(silent=True) or {}
+    roles    = [r.strip() for r in data.get("roles", []) if r.strip()]
+    dry_run  = bool(data.get("dry_run", False))
+    linkedin = bool(data.get("linkedin", False))
+
+    cmd = [sys.executable, str(_AGENT_ROOT / "main.py")]
+    if dry_run:
+        cmd.append("--dry-run")
+    if linkedin:
+        cmd.append("--linkedin")
+    if roles:
+        cmd += ["--roles", ",".join(roles)]
+
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            cwd=str(_AGENT_ROOT),
+        )
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    with _run_lock:
+        _run_state["log"].clear()
+        _run_state["running"]   = True
+        _run_state["exit_code"] = None
+        _run_state["process"]   = proc
+        _run_state["roles"]     = roles or list(config.TARGET_ROLES)
+        _run_state["dry_run"]   = dry_run
+
+    thread = threading.Thread(target=_stream_output, args=(proc,), daemon=True)
+    thread.start()
+
+    logger.info("Agent subprocess started (PID %d) roles=%s dry=%s", proc.pid, roles, dry_run)
+    return jsonify({"started": True, "pid": proc.pid})
+
+
+@app.route("/api/run/status")
+def api_run_status():
+    """Return current run state + last N log lines."""
+    with _run_lock:
+        return jsonify({
+            "running":   _run_state["running"],
+            "exit_code": _run_state["exit_code"],
+            "roles":     _run_state["roles"],
+            "dry_run":   _run_state["dry_run"],
+            "log":       "\n".join(_run_state["log"]),
+        })
+
+
+@app.route("/api/run/stop", methods=["POST"])
+def api_run_stop():
+    """Terminate the running agent subprocess."""
+    with _run_lock:
+        proc = _run_state.get("process")
+        if proc and _run_state["running"]:
+            proc.terminate()
+            _run_state["running"] = False
+            _run_state["log"].append("── Run stopped by user ──")
+            return jsonify({"stopped": True})
+    return jsonify({"stopped": False, "reason": "not running"})
 
 
 @app.route("/update_status", methods=["POST"])
